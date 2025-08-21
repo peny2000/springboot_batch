@@ -1,0 +1,39 @@
+---
+spring:
+  profiles: local
+
+## Monitoring DB
+monitoring:
+  datasource:
+    url: jdbc:mysql://10.49.10.45:3306/lf_monitoring
+    username: lf_monitoring
+    password: monitoring!@#
+    driver-class-name: com.mysql.jdbc.Driver
+
+## Shop DB
+shop:
+  datasource:
+    url: jdbc:oracle:thin:@10.49.8.71:1527/LFQ
+    username: saplegacy
+    password: lgfsap01
+    driver-class-name: oracle.jdbc.OracleDriver
+
+---
+spring:
+  profiles: live
+
+## Monitoring DB
+monitoring:
+  datasource:
+    url: jdbc:mysql://10.49.8.189:3306/lf_monitoring
+    username: lf_monitoring
+    password: monitoring!@#
+    driver-class-name: com.mysql.jdbc.Driver
+
+## Shop DB
+shop:
+  datasource:
+    url: jdbc:oracle:thin:@10.49.8.68:1527/LFP
+    username: saplegacy
+    password: lgfsap01
+    driver-class-name: oracle.jdbc.OracleDriver
