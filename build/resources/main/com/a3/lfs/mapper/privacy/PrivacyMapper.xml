@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.a3.lfs.mapper.privacy.PrivacyMapper">
+
+    <select id="findAllInspect" parameterType="string" resultType="PiInspect">
+
+        SELECT
+            InspectGuid,
+            InspectLogTime,
+            InspectInfo,
+            InspectStartTime,
+            InspectEndTime,
+            InspectCount,
+            InspectEtcCount,
+            UserName,
+            ComputerName,
+            AgentIP AS AgentIPLong,
+            UserID,
+            PolicyName,
+            TaskName,
+            DeptName,
+            DeptFullName
+        FROM ${tableName}
+    </select>
+
+    <select id="findAllFile" parameterType="string" resultType="PiFile">
+
+        SELECT
+            FileGuid,
+            InspectGuid,
+            FileLogTime,
+            InspectType,
+            PatternType,
+            PatternName,
+            InspectCount,
+            REPLACE(REPLACE(FileName, '"',''), '\', '/') AS FileName,
+            FileSize,
+            FileCreatedTime,
+            FileModifiedTime,
+            FileAccessedTime,
+            FileType,
+            REPLACE(REPLACE(FilePath, '"',''), '\', '/') AS FilePath
+        FROM ${tableName}
+    </select>
+
+</mapper>

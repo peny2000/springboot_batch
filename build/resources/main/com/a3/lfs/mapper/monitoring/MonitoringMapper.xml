@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.a3.lfs.mapper.monitoring.MonitoringMapper">
+
+    <delete id="truncate" parameterType="string">
+		/* truncate */
+		
+        TRUNCATE TABLE ${tableName}
+    </delete>
+
+    <insert id="insertPrivacyInspect" parameterType="map">
+    	/* insertPrivacyInspect */
+    	
+        INSERT INTO ${tableName}
+        (
+            InspectGuid, InspectLogTime, InspectInfo, InspectStartTime, InspectEndTime,
+            InspectCount, InspectEtcCount, UserName, ComputerName, AgentIP, UserID,
+            PolicyName, TaskName, DeptName, DeptFullName
+        )
+        VALUES
+        <foreach collection="inspectList" item="item" separator=",">
+        (
+            #{item.InspectGuid}, #{item.InspectLogTime}, #{item.InspectInfo}, #{item.InspectStartTime}, #{item.InspectEndTime},
+            #{item.InspectCount}, #{item.InspectEtcCount}, #{item.UserName}, #{item.ComputerName}, #{item.AgentIP}, #{item.UserID},
+            #{item.PolicyName}, #{item.TaskName}, #{item.DeptName}, #{item.DeptFullName}
+        )
+        </foreach>
+    </insert>
+
+    <insert id="insertPrivacyFile" parameterType="map">
+    	/* insertPrivacyFile */
+    	
+        INSERT INTO ${tableName}
+        (
+            FileGuid, InspectGuid, FileLogTime, InspectType, PatternType, PatternName, InspectCount,
+            FileName, FileSize, FileCreatedTime, FileModifiedTime, FileAccessedTime, FileType, FilePath
+        )
+        VALUES
+        <foreach collection="fileList" item="item" separator=",">
+        (
+            #{item.FileGuid}, #{item.InspectGuid}, #{item.FileLogTime}, #{item.InspectType}, #{item.PatternType}, #{item.PatternName}, #{item.InspectCount},
+            #{item.FileName}, #{item.FileSize}, #{item.FileCreatedTime}, #{item.FileModifiedTime}, #{item.FileAccessedTime}, #{item.FileType}, #{item.FilePath}
+        )
+        </foreach>
+    </insert>
+
+    <select id="syncMyPc" parameterType="map">
+    	/* syncMyPc */
+    	
+        CALL mpc_sync(#{lastMonth}, #{lastDate})
+    </select>
+
+    <select id="syncPrivacyI" parameterType="map">
+    	/* syncPrivacyI */
+    	
+        CALL pi_sync(#{tempName}, #{lastMonth}, #{lastDate})
+    </select>
+
+    <select id="syncDailyStatus" parameterType="map">
+    	/* syncDailyStatus */
+    	
+        CALL daily_status_sync(#{lastMonth}, #{lastDate})
+    </select>
+
+    <insert id="updateShop" parameterType="list">
+    	/* updateShop */
+    	
+        INSERT INTO mor_shp
+        (
+            kunnr, name1, ort01, stras, telf1, telf2,
+            regio, regio_txt, vkbur, vkbur_txt,
+            pltyp, pltyp_txt, konda, konda_txt,
+            shp_owner, shp_mail
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+        (
+            #{item.kunnr}, #{item.name1}, #{item.ort01}, #{item.stras}, #{item.telf1}, #{item.telf2},
+            #{item.regio}, #{item.regioTxt}, #{item.vkbur}, #{item.vkburTxt},
+            #{item.pltyp}, #{item.pltypTxt}, #{item.konda}, #{item.kondaTxt},
+            #{item.shpOwner}, #{item.shpMail}
+        )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            name1=VALUES(name1), ort01=VALUES(ort01), stras=VALUES(stras), telf1=VALUES(telf1), telf2=VALUES(telf2),
+            regio=VALUES(regio), regio_txt=VALUES(regio_txt), vkbur=VALUES(vkbur), vkbur_txt=VALUES(vkbur_txt),
+            pltyp=VALUES(pltyp), pltyp_txt=VALUES(pltyp_txt), konda=VALUES(konda), konda_txt=VALUES(konda_txt),
+            shp_owner=VALUES(shp_owner), shp_mail=VALUES(shp_mail)
+    </insert>
+    
+    <insert id="updateUsr" parameterType="HashMap">
+		/* updateUsr */
+		
+        INSERT INTO sys_usr
+        (
+            mem_no, usr_nm, usr_tel, usr_eml, ip_adr,
+            wrk_div_typ, crt_usr_id, crt_dt, dpt_id, usr_macadr
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+        (
+            #{item.mem_no}, #{item.usr_nm}, #{item.usr_tel}, #{item.usr_eml}, #{item.ip_adr},
+            'W', 1, now(), #{item.dpt_id}, #{item.usr_macadr}
+        )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            mem_no=VALUES(mem_no), usr_nm=VALUES(usr_nm), usr_tel=VALUES(usr_tel)
+            , usr_eml=VALUES(usr_eml), dpt_id=VALUES(dpt_id), usr_macadr=VALUES(usr_macadr)
+    </insert>
+    
+    <insert id="updateDpt" parameterType="Dpt">
+		/* updateDpt */
+		
+        INSERT INTO sys_dpt (
+            dpt_nm
+            , dpt_cd
+            , crt_usr_id
+            , crt_dt
+        ) 
+        SELECT 
+            #{dptNm}
+            , IFNULL(CONCAT("DPT", LPAD(SUBSTRING(MAX(dpt_cd), 4) + 1, 5, "0")), 'DPT00001')
+            , 1
+            , now()
+        FROM sys_dpt
+            WHERE dpt_cd = (SELECT MAX(dpt_cd) FROM sys_dpt)
+            
+        ON DUPLICATE KEY UPDATE
+        	dpt_id = LAST_INSERT_ID(dpt_id)
+        <selectKey keyProperty="dptId" resultType="string">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <!-- 통제시나리오 탐지 -->
+    <select id="detectTotalScore" parameterType="string">
+		/* detectTotalScore */
+		
+        CALL sce_detect_total_score(#{lastDate})
+    </select>
+
+    <select id="detectMyPcScore" parameterType="string">
+		/* detectMyPcScore */
+		
+        CALL sce_detect_mypc_score(#{lastDate})
+    </select>
+
+    <select id="detectPrivacyInspect" parameterType="string">
+		/* detectPrivacyInspect */
+		
+        CALL sce_detect_pi_inspect(#{lastDate})
+    </select>
+
+    <select id="detectPrivacyFile" parameterType="string">
+		/* detectPrivacyFile */
+		
+        CALL sce_detect_pi_file(#{lastDate})
+    </select>
+
+    <select id="detectShopCheck" parameterType="string">
+		/* detectShopCheck */
+		
+        CALL sce_detect_shop_check(#{lastDate})
+    </select>
+
+    <select id="getDetectedIpList" parameterType="string" resultType="string">
+		/* getDetectedIpList */
+		
+        SELECT
+            IPADDR
+        FROM mor_sce_det
+        WHERE chk_day = #{lastDate}
+        GROUP BY IPADDR
+    </select>
+
+    <select id="getAutoAgentList" resultType="Agent">
+		/* getAutoAgentList */
+		
+        SELECT
+            (
+                CASE
+                    WHEN cd.cd = 'A_COT001' THEN 0
+                    WHEN cd.cd = 'A_COT002' THEN 1
+                    WHEN cd.cd = 'A_COT003' THEN 2
+                END
+            ) AS controlType,
+            IP_RAN AS ipRange,
+            stop_time
+        FROM mor_agt_mgr agt
+        INNER JOIN sys_cd cd ON agt.COT_ID = cd.cd_id
+        WHERE AUT_YN = 'Y' AND AGT_USE_YN = 'Y'
+    </select>
+
+    <insert id="sendAgent" parameterType="SendAgent">
+		/* sendAgent */
+		
+        INSERT INTO agt_sct_dtt
+        (
+            target_ip,
+            contrl_type,
+            msg,
+            state,
+            stop_time,
+            uLockCd
+        )
+        VALUES
+        <foreach collection="collection" item="item" separator=",">
+        (
+            #{item.targetIp},
+            #{item.controlType},
+            #{item.message},
+            'waiting',
+            #{item.stopTime},
+            (select code from agt_ulock_cd where 1 order by id desc limit 1)
+        )
+        </foreach>
+    </insert>
+    
+    <!-- 사용자 정보 리스트 -->
+    <select id="findAllOriginalUsr" resultType="HashMap">
+		/* findAllOriginalUsr */
+		
+        SELECT
+            EMPNO              AS mem_no
+            , NAME             AS usr_nm
+            , IPADDR           AS ip_adr
+            , DEPARTMENT       AS dpt_nm
+            , MACADDR          AS usr_macadr
+            , PHONENO          AS usr_tel
+            , EMAIL            AS usr_eml
+        FROM mor_mpc_pri_org
+        WHERE NAME NOT IN ('')
+        AND IPADDR NOT IN ('')
+    </select>
+</mapper>
