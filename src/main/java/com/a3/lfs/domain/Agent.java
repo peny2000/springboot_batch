@@ -8,6 +8,8 @@ import java.util.List;
 
 public class Agent{
 
+
+    //test
 	private int controlType;
 	private String ipRange;
 	private int stopTime;
